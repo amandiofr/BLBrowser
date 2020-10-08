@@ -287,7 +287,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             currentFocus?.windowToken,
             0
         )
-        webView?.loadUrl("https://google.fr/search?q=" + googleEditText.text)
+        webView?.loadUrl("https://search.lilo.org/?q=" + googleEditText.text)
         googleEditText.setText("")
     }
 
