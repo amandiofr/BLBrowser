@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -36,14 +37,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var navigationViewHeaderView: View? = null
     var webView: WebView? = null
 
-    var mDateTimeHandler = Handler()
+    var mDateTimeHandler = Handler(Looper.getMainLooper())
     private var mDateTimeHandlerTask: Runnable = object : Runnable {
         override fun run() {
             updateDateTime()
             mDateTimeHandler.postDelayed(this, INTERVAL)
         }
     }
-    private val mHideHandler = Handler()
+    private val mHideHandler = Handler(Looper.getMainLooper())
     @SuppressLint("SetJavaScriptEnabled")
     private val mHideRunnable = Runnable {
         webView?.settings?.javaScriptEnabled = true
@@ -51,7 +52,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         webView?.settings?.displayZoomControls = false
         webView?.settings?.loadWithOverviewMode = AUTO_HIDE
         webView?.settings?.useWideViewPort = AUTO_HIDE
-        webView?.loadUrl(lastUrl)
+        lastUrl?.let { webView?.loadUrl(it) }
     }
 
     fun updateDateTime() {
@@ -81,7 +82,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         webView = findViewById(R.id.webView)
         val webSettings = webView?.settings
         webSettings?.setSupportZoom(AUTO_HIDE)
-        webSettings?.setAppCacheEnabled(false)
         LayoutInflater.from(baseContext).inflate(R.layout.nav_header_main, null)
         val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
         navigationView.setNavigationItemSelectedListener(this)
@@ -185,7 +185,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navigationViewHeaderView!!.findViewById<View>(R.id.btnHome).setOnClickListener {
             mDrawerLayout?.closeDrawer(GravityCompat.START)
             goFullScreen()
-            webView?.loadUrl(homeUrl)
+            homeUrl?.let { it1 -> webView?.loadUrl(it1) }
             clearHistory = AUTO_HIDE
         }
         navigationViewHeaderView!!.findViewById<View>(R.id.btnExit).setOnClickListener {
@@ -201,6 +201,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 else -> seekBarLight.progress = 100
             }
         }
+        (navigationViewHeaderView!!.findViewById<View>(R.id.title_text) as TextView).text = "BLBrowser ${BuildConfig.VERSION_NAME}"
         goFullScreen()
     }
 
@@ -251,7 +252,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         updateDateTime()
         goFullScreen()
         if (m_savedInstanceState == null) {
-            webView?.loadUrl(lastUrl)
+            lastUrl?.let { webView?.loadUrl(it) }
         }
         webView?.onResume()
     }
@@ -313,7 +314,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     companion object {
-        val TAG = MainActivity::class.java.simpleName
+        const val TAG = "MainActivity"
 
         private const val AUTO_HIDE = true
         private const val INTERVAL = 60000L
