@@ -1,29 +1,26 @@
 package fr.amandio.blbrowser
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
+import android.view.View.*
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
-import kotlinx.android.synthetic.main.nav_header_main.*
+import fr.amandio.blbrowser.databinding.ActivityMainBinding
+import fr.amandio.blbrowser.databinding.NavHeaderMainBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -31,11 +28,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private var firstTimeUpdateSucceeded = AUTO_HIDE
     private var homeUrlEditText: EditText? = null
-    private var mDrawerLayout: DrawerLayout? = null
 
-    var mProgressBar: ProgressBar? = null
-    var navigationViewHeaderView: View? = null
-    var webView: WebView? = null
+    private lateinit var activityMainBinding: ActivityMainBinding
+    private lateinit var navHeaderMainBinding: NavHeaderMainBinding
 
     var mDateTimeHandler = Handler(Looper.getMainLooper())
     private var mDateTimeHandlerTask: Runnable = object : Runnable {
@@ -45,80 +40,80 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
     private val mHideHandler = Handler(Looper.getMainLooper())
-    @SuppressLint("SetJavaScriptEnabled")
     private val mHideRunnable = Runnable {
-        webView?.settings?.javaScriptEnabled = true
-        webView?.settings?.builtInZoomControls = AUTO_HIDE
-        webView?.settings?.displayZoomControls = false
-        webView?.settings?.loadWithOverviewMode = AUTO_HIDE
-        webView?.settings?.useWideViewPort = AUTO_HIDE
-        lastUrl?.let { webView?.loadUrl(it) }
+//        activityMainBinding.webView.settings.javaScriptEnabled = true
+        activityMainBinding.webView.settings.builtInZoomControls = AUTO_HIDE
+        activityMainBinding.webView.settings.displayZoomControls = false
+        activityMainBinding.webView.settings.loadWithOverviewMode = AUTO_HIDE
+        activityMainBinding.webView.settings.useWideViewPort = AUTO_HIDE
+        lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
     }
 
     fun updateDateTime() {
-        val textView = findViewById<TextView>(R.id.clockText)
-        if (textView != null) {
-            textView.text = SimpleDateFormat(DATE_FORMAT, Locale.FRANCE).format(Date())
-            if (firstTimeUpdateSucceeded) {
-                firstTimeUpdateSucceeded = false
-            }
+        navHeaderMainBinding.clockText.text = SimpleDateFormat(DATE_FORMAT, Locale.FRANCE).format(Date())
+        if (firstTimeUpdateSucceeded) {
+            firstTimeUpdateSucceeded = false
         }
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.v(TAG, "onCreate")
+
         val prefs = getSharedPreferences(MY_PREFS_NAME, 0)
         if (prefs.getString(PREFS_HOME, null) != null) {
             homeUrl = prefs.getString(PREFS_HOME, homeUrl)
         }
         lastUrl = homeUrl
-        window.requestFeature(9)
-        window.requestFeature(1)
-        window.addFlags(2097152)
-        window.addFlags(1024)
-        window.addFlags(33554432)
-        setContentView(R.layout.activity_main)
-        mDrawerLayout = findViewById(R.id.drawer_layout)
-        webView = findViewById(R.id.webView)
-        val webSettings = webView?.settings
-        webSettings?.setSupportZoom(AUTO_HIDE)
-        LayoutInflater.from(baseContext).inflate(R.layout.nav_header_main, null)
-        val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
-        navigationView.setNavigationItemSelectedListener(this)
-        navigationViewHeaderView = navigationView.getHeaderView(0)
-        val seekBarLight =
-            navigationViewHeaderView?.findViewById<View>(R.id.seekBarLight) as SeekBar
-        seekBarLight.max = 100
-        seekBarLight.progress = 100
-        seekBarLight.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                val alpha = (progress * progress).toFloat() * 0.9f / 10000.0f + 0.1f
-                webView?.alpha = alpha
-                navigationViewHeaderView?.alpha = alpha
-            }
+        with(window) {
+            requestFeature(9)
+            requestFeature(1)
+            addFlags(2097152)
+            addFlags(1024)
+            addFlags(33554432)
+        }
 
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
-        (navigationViewHeaderView?.findViewById<View>(R.id.googleEditText) as EditText).setOnEditorActionListener { _, actionId, _ ->
+        activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(activityMainBinding.root)
+
+        activityMainBinding.webView.settings.setSupportZoom(AUTO_HIDE)
+        activityMainBinding.navView.setNavigationItemSelectedListener(this)
+        val navigationViewHeaderView = activityMainBinding.navView.getHeaderView(0) as View
+        navHeaderMainBinding = NavHeaderMainBinding.bind(navigationViewHeaderView)
+        with(navHeaderMainBinding.seekBarLight) {
+            max = 100
+            progress = 100
+            setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                    val alpha = (progress * progress).toFloat() * 0.9f / 10000.0f + 0.1f
+                    activityMainBinding.webView.alpha = alpha
+                    navigationViewHeaderView.alpha = alpha
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar) {}
+                override fun onStopTrackingTouch(seekBar: SeekBar) {}
+            })
+        }
+        navHeaderMainBinding.googleEditText.setOnEditorActionListener { _, actionId, _ ->
             Log.v(TAG, "OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
-                mDrawerLayout?.closeDrawer(GravityCompat.START)
+                activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
                 goFullScreen()
                 execGoogleSearch()
             }
             false
         }
-        (navigationViewHeaderView?.findViewById<View>(R.id.httpEditText) as EditText).setOnEditorActionListener { _, actionId, _ ->
+        navHeaderMainBinding.httpEditText.setOnEditorActionListener { _, actionId, _ ->
             Log.v(TAG, "OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
-                mDrawerLayout?.closeDrawer(GravityCompat.START)
+                activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
                 goFullScreen()
                 execOpenUrl()
             }
             false
         }
-        webView?.webViewClient = object : WebViewClient() {
+        activityMainBinding.webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView, url: String) {
                 if (url == homeUrl || clearHistory) {
                     view.clearHistory()
@@ -129,35 +124,33 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 Log.v(TAG, "loadUrl $url")
                 super.onPageFinished(view, url)
                 lastUrl = url
-                val urlEditText = findViewById<View>(R.id.httpEditText) as EditText
-                urlEditText.setText(url)
+                navHeaderMainBinding.httpEditText.setText(url)
                 updateDateTime()
             }
         }
-        mProgressBar = findViewById(R.id.progressBar)
-        webView?.webChromeClient = object : WebChromeClient() {
+        activityMainBinding.webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, progress: Int) {
                 Log.v(TAG, "onProgressChanged progress:$progress")
-                if (mProgressBar?.visibility == View.GONE && lastUrl!!.indexOf("showphoto") < 0) {
-                    mProgressBar?.visibility = View.VISIBLE
+                if (activityMainBinding.progressBar.visibility == View.GONE && lastUrl!!.indexOf("showphoto") < 0) {
+                    activityMainBinding.progressBar.visibility = View.VISIBLE
                 }
-                mProgressBar?.progress = progress
+                activityMainBinding.progressBar.progress = progress
                 if (progress == 100) {
-                    mProgressBar?.visibility = View.GONE
+                    activityMainBinding.progressBar.visibility = View.GONE
                 }
             }
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnBack).setOnClickListener {
-            webView?.goBack()
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
+        navHeaderMainBinding.btnBack.setOnClickListener {
+            activityMainBinding.webView.goBack()
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnSettings).setOnClickListener {
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
+        navHeaderMainBinding.btnSettings.setOnClickListener {
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             goFullScreen()
-            homeUrlEditText = EditText(webView?.context)
+            homeUrlEditText = EditText(activityMainBinding.webView.context)
             homeUrlEditText?.setText(homeUrl)
             homeUrlEditText?.inputType = 144
-            val builder = AlertDialog.Builder(webView?.context)
+            val builder = AlertDialog.Builder(activityMainBinding.webView.context)
             builder.setTitle("HomePage").setView(homeUrlEditText)
                 .setPositiveButton("Ok") { dialog, _ ->
                     homeUrl = homeUrlEditText?.text.toString()
@@ -172,42 +165,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             builder.show()
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnRefresh).setOnClickListener {
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
+        navHeaderMainBinding.btnRefresh.setOnClickListener {
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             goFullScreen()
-            webView?.reload()
+            activityMainBinding.webView.reload()
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnCancel).setOnClickListener {
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
+        navHeaderMainBinding.btnCancel.setOnClickListener {
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             goFullScreen()
-            webView?.stopLoading()
+            activityMainBinding.webView.stopLoading()
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnHome).setOnClickListener {
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
+        navHeaderMainBinding.btnHome.setOnClickListener {
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             goFullScreen()
-            homeUrl?.let { it1 -> webView?.loadUrl(it1) }
+            homeUrl?.let { it1 -> activityMainBinding.webView.loadUrl(it1) }
             clearHistory = AUTO_HIDE
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnExit).setOnClickListener {
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
-            goFullScreen()
+        navHeaderMainBinding.btnExit.setOnClickListener {
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             finish()
         }
-        navigationViewHeaderView!!.findViewById<View>(R.id.btnLight).setOnClickListener {
+        navHeaderMainBinding.btnLight.setOnClickListener {
             when {
-                seekBarLight.progress == 0 -> seekBarLight.progress = 100
-                seekBarLight.progress == 100 -> seekBarLight.progress = 0
-                seekBarLight.progress < 50 -> seekBarLight.progress = 0
-                else -> seekBarLight.progress = 100
+                navHeaderMainBinding.seekBarLight.progress == 0 -> navHeaderMainBinding.seekBarLight.progress = 100
+                navHeaderMainBinding.seekBarLight.progress == 100 -> navHeaderMainBinding.seekBarLight.progress = 0
+                navHeaderMainBinding.seekBarLight.progress < 50 -> navHeaderMainBinding.seekBarLight.progress = 0
+                else -> navHeaderMainBinding.seekBarLight.progress = 100
             }
         }
-        (navigationViewHeaderView!!.findViewById<View>(R.id.title_text) as TextView).text = "BLBrowser ${BuildConfig.VERSION_NAME}"
+        navHeaderMainBinding.titleText.text = "BLBrowser ${BuildConfig.VERSION_NAME}"
         goFullScreen()
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        webView?.clearCache(AUTO_HIDE)
+        activityMainBinding.webView.clearCache(AUTO_HIDE)
     }
 
     public override fun onStart() {
@@ -219,8 +211,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public override fun onStop() {
         super.onStop()
         stopRepeatingTask()
-        webView?.clearCache(AUTO_HIDE)
-        webView?.clearFormData()
+        activityMainBinding.webView.clearCache(AUTO_HIDE)
+        activityMainBinding.webView.clearFormData()
     }
 
     private fun startRepeatingTask() {
@@ -233,28 +225,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     public override fun onPause() {
         super.onPause()
-        webView?.onPause()
+        Log.v(TAG, "onPause")
+        activityMainBinding.webView.onPause()
     }
 
     public override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        webView?.saveState(outState)
+        activityMainBinding.webView.saveState(outState)
         m_savedInstanceState = outState
     }
 
     public override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        webView?.restoreState(savedInstanceState)
+        activityMainBinding.webView.restoreState(savedInstanceState)
     }
 
     public override fun onResume() {
         super.onResume()
+        Log.v(TAG, "onResume")
         updateDateTime()
         goFullScreen()
         if (m_savedInstanceState == null) {
-            lastUrl?.let { webView?.loadUrl(it) }
+            lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
         }
-        webView?.onResume()
+        activityMainBinding.webView.onResume()
     }
 
     public override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -284,28 +278,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun execGoogleSearch() {
-        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(
-            currentFocus?.windowToken,
-            0
-        )
-        webView?.loadUrl("https://search.lilo.org/?q=" + googleEditText.text)
-        googleEditText.setText("")
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        activityMainBinding.webView.loadUrl("https://google.fr/search?q=" + navHeaderMainBinding.googleEditText.text)
+        navHeaderMainBinding.googleEditText.setText("")
     }
 
     private fun execOpenUrl() {
-        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(
-            currentFocus?.windowToken,
-            0
-        )
-        val url =
-            httpEditText.text.replace("http://".toRegex(), "").replace("https://".toRegex(), "")
-        webView?.loadUrl("https://$url")
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        val url = navHeaderMainBinding.httpEditText.text.replace("http://".toRegex(), "").replace("https://".toRegex(), "")
+        activityMainBinding.webView.loadUrl("https://$url")
     }
 
     override fun onBackPressed() {
-        if (webView?.url != homeUrl) {
-            webView?.goBack()
-            mDrawerLayout?.closeDrawer(GravityCompat.START)
+        if (activityMainBinding.webView.url != homeUrl) {
+            activityMainBinding.webView.goBack()
+            activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
         }
     }
 
