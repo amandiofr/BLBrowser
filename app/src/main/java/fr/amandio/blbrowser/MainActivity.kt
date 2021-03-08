@@ -8,7 +8,6 @@ import android.os.Looper
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
-import android.view.View.*
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -26,7 +25,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
-    private var firstTimeUpdateSucceeded = AUTO_HIDE
+    private var firstTimeUpdateSucceeded = true
     private var homeUrlEditText: EditText? = null
 
     private lateinit var activityMainBinding: ActivityMainBinding
@@ -41,11 +40,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
     private val mHideHandler = Handler(Looper.getMainLooper())
     private val mHideRunnable = Runnable {
-//        activityMainBinding.webView.settings.javaScriptEnabled = true
-        activityMainBinding.webView.settings.builtInZoomControls = AUTO_HIDE
+        activityMainBinding.webView.settings.javaScriptEnabled = true
+        activityMainBinding.webView.settings.builtInZoomControls = true
         activityMainBinding.webView.settings.displayZoomControls = false
-        activityMainBinding.webView.settings.loadWithOverviewMode = AUTO_HIDE
-        activityMainBinding.webView.settings.useWideViewPort = AUTO_HIDE
+        activityMainBinding.webView.settings.loadWithOverviewMode = true
+        activityMainBinding.webView.settings.useWideViewPort = true
         lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
     }
 
@@ -77,9 +76,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding.root)
 
-        activityMainBinding.webView.settings.setSupportZoom(AUTO_HIDE)
+        activityMainBinding.webView.settings.setSupportZoom(true)
         activityMainBinding.navView.setNavigationItemSelectedListener(this)
-        val navigationViewHeaderView = activityMainBinding.navView.getHeaderView(0) as View
+        val navigationViewHeaderView = activityMainBinding.navView.getHeaderView(0)
         navHeaderMainBinding = NavHeaderMainBinding.bind(navigationViewHeaderView)
         with(navHeaderMainBinding.seekBarLight) {
             max = 100
@@ -117,7 +116,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             override fun onPageFinished(view: WebView, url: String) {
                 if (url == homeUrl || clearHistory) {
                     view.clearHistory()
-                    view.clearCache(AUTO_HIDE)
+                    view.clearCache(true)
                     view.clearFormData()
                     clearHistory = false
                 }
@@ -179,7 +178,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             goFullScreen()
             homeUrl?.let { it1 -> activityMainBinding.webView.loadUrl(it1) }
-            clearHistory = AUTO_HIDE
+            clearHistory = true
         }
         navHeaderMainBinding.btnExit.setOnClickListener {
             activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -199,7 +198,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onLowMemory() {
         super.onLowMemory()
-        activityMainBinding.webView.clearCache(AUTO_HIDE)
+        activityMainBinding.webView.clearCache(true)
     }
 
     public override fun onStart() {
@@ -211,7 +210,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public override fun onStop() {
         super.onStop()
         stopRepeatingTask()
-        activityMainBinding.webView.clearCache(AUTO_HIDE)
+        activityMainBinding.webView.clearCache(true)
         activityMainBinding.webView.clearFormData()
     }
 
@@ -297,13 +296,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        return AUTO_HIDE
+        return true
     }
 
     companion object {
         const val TAG = "MainActivity"
 
-        private const val AUTO_HIDE = true
         private const val INTERVAL = 60000L
         private const val DELAY_HIDE = 300L
         private const val PREFS_HOME = "HOME"
