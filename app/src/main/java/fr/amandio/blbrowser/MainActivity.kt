@@ -2,12 +2,14 @@ package fr.amandio.blbrowser
 
 import android.app.AlertDialog
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowInsets
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -22,6 +24,7 @@ import fr.amandio.blbrowser.databinding.ActivityMainBinding
 import fr.amandio.blbrowser.databinding.NavHeaderMainBinding
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -262,8 +265,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun goFullScreen() {
         Log.v(TAG, "goFullScreen")
-        val decorView = window.decorView
-        decorView.systemUiVisibility = 4358
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.hide(WindowInsets.Type.systemBars())
+            window.setDecorFitsSystemWindows(false)
+        } else {
+            window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_IMMERSIVE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
+        }
+
         val currentFocusView = currentFocus
         if (currentFocusView != null) {
             currentFocusView.clearFocus()
@@ -271,8 +286,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             Log.v(TAG, "goFullScreen : focus back to currentFocus")
             return
         }
-        decorView.clearFocus()
-        decorView.requestFocus()
+        window.decorView.clearFocus()
+        window.decorView.requestFocus()
         Log.v(TAG, "goFullScreen : no view has focus")
     }
 
