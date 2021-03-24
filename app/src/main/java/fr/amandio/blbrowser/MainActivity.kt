@@ -325,7 +325,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         private const val DATE_FORMAT = "E dd       HH:mm"
 
         var clearHistory = false
-        var homeUrl: String? = "https://amandio.fr"
+        var homeUrl: String? = "https://google.fr"
         var lastUrl: String? = null
         private var m_savedInstanceState: Bundle? = null
     }
