@@ -1,0 +1,3 @@
+Keystore password : huj7fr
+Key alias : blbrowser
+Key alias password : huj7fr

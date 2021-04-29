@@ -101,18 +101,26 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navHeaderMainBinding.googleEditText.setOnEditorActionListener { _, actionId, _ ->
             Log.v(TAG, "OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
-                activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
-                goFullScreen()
-                execGoogleSearch()
+                if( navHeaderMainBinding.googleEditText.text.toString() == "crash") {
+                    val x = 1 / 0
+                } else {
+                    activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
+                    goFullScreen()
+                    execGoogleSearch()
+                }
             }
             false
         }
         navHeaderMainBinding.httpEditText.setOnEditorActionListener { _, actionId, _ ->
             Log.v(TAG, "OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
-                activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
-                goFullScreen()
-                execOpenUrl()
+                if( navHeaderMainBinding.httpEditText.text.toString() == "crash") {
+                    val x = 1 / 0
+                } else {
+                    activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
+                    goFullScreen()
+                    execOpenUrl()
+                }
             }
             false
         }
