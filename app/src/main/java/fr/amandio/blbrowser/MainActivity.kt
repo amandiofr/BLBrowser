@@ -21,6 +21,10 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 import fr.amandio.blbrowser.databinding.ActivityMainBinding
 import fr.amandio.blbrowser.databinding.NavHeaderMainBinding
 import java.text.SimpleDateFormat
@@ -206,7 +210,32 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         navHeaderMainBinding.titleText.text = "BLBrowser ${BuildConfig.VERSION_NAME}"
         goFullScreen()
+        checkAppUpdate()
     }
+
+    @Synchronized
+    private fun checkAppUpdate() {
+        Log.v(TAG, "checkAppUpdate")
+        val appUpdateManager = AppUpdateManagerFactory.create(activityMainBinding.webView.context)
+        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            Log.v(TAG, "checkAppUpdate onSuccessListener updateAvailability:${appUpdateInfo.updateAvailability()} installStatus:${appUpdateInfo.installStatus()}")
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
+                Log.v(TAG, "checkAppUpdate AppUpdateType.IMMEDIATE")
+                appUpdateManager.startUpdateFlowForResult(appUpdateInfo, AppUpdateType.IMMEDIATE, this, appUpdateRequestCode)
+            }
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
+                Log.v(TAG, "checkAppUpdate UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS")
+                appUpdateManager.startUpdateFlowForResult(appUpdateInfo, AppUpdateType.IMMEDIATE, this, appUpdateRequestCode)
+            }
+            if (appUpdateInfo.installStatus() == InstallStatus.DOWNLOADED) {
+                Log.v(TAG, "checkAppUpdate InstallStatus.DOWNLOADED")
+                appUpdateManager.completeUpdate()
+            }
+        }
+    }
+
 
     override fun onLowMemory() {
         super.onLowMemory()
@@ -331,6 +360,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         private const val PREFS_HOME = "HOME"
         private const val MY_PREFS_NAME = "BLBrowserPreferences"
         private const val DATE_FORMAT = "E dd       HH:mm"
+
+        private const val appUpdateRequestCode = 15
 
         var clearHistory = false
         var homeUrl: String? = "https://google.fr"
