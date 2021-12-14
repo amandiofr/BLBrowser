@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:text="BLBrowser"
+        android:text="@string/blbrowser"
         android:textAlignment="textStart"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:text="DATETIME"
+        android:text="@string/datetime"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textSize="24sp" />
@@ -37,7 +37,8 @@
         android:maxLines="1"
         android:padding="10dp"
         android:textColor="@android:color/white"
-        android:textStyle="normal" />
+        android:textStyle="normal"
+        android:autofillHints="" />
 
     <EditText
         android:id="@+id/httpEditText"
@@ -50,7 +51,8 @@
         android:maxLines="1"
         android:padding="10dp"
         android:textColor="@android:color/white"
-        android:textStyle="normal" />
+        android:textStyle="normal"
+        android:autofillHints="" />
 
 
     <LinearLayout
@@ -66,7 +68,8 @@
             android:layout_margin="15dp"
             android:background="@android:color/transparent"
             android:src="@drawable/back_icon"
-            android:text="back" />
+            android:text="@string/back"
+            android:contentDescription="@string/back" />
 
         <ImageButton
             android:id="@+id/btnRefresh"
@@ -75,7 +78,8 @@
             android:layout_margin="15dp"
             android:background="@android:color/transparent"
             android:src="@drawable/refresh_icon"
-            android:text="refresh" />
+            android:text="@string/refresh"
+            android:contentDescription="@string/refresh" />
     </LinearLayout>
 
     <LinearLayout
@@ -91,7 +95,8 @@
             android:layout_margin="15dp"
             android:background="@android:color/transparent"
             android:src="@drawable/home_icon"
-            android:text="home" />
+            android:text="@string/home"
+            android:contentDescription="@string/home" />
 
         <ImageButton
             android:id="@+id/btnCancel"
@@ -100,7 +105,8 @@
             android:layout_margin="15dp"
             android:background="@android:color/transparent"
             android:src="@drawable/cancel_icon"
-            android:text="Cancel" />
+            android:text="@string/cancel"
+            android:contentDescription="@string/cancel" />
     </LinearLayout>
 
     <LinearLayout
@@ -117,7 +123,8 @@
             android:layout_margin="15dp"
             android:background="@android:color/transparent"
             android:src="@drawable/settings_icon"
-            android:text="settings" />
+            android:text="@string/settings"
+            android:contentDescription="@string/settings" />
 
         <ImageButton
             android:id="@+id/btnExit"
@@ -126,7 +133,8 @@
             android:layout_margin="15dp"
             android:background="@android:color/transparent"
             android:src="@drawable/exit_icon"
-            android:text="Exit" />
+            android:text="@string/exit"
+            android:contentDescription="@string/exit" />
     </LinearLayout>
 
     <LinearLayout
@@ -141,7 +149,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:background="@android:color/transparent"
-            android:src="@drawable/sun" />
+            android:src="@drawable/sun"
+            android:contentDescription="@string/light" />
 
         <SeekBar
             android:id="@+id/seekBarLight"
