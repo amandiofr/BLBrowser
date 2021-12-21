@@ -219,7 +219,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val appUpdateManager = AppUpdateManagerFactory.create(activityMainBinding.webView.context)
         val appUpdateInfoTask = appUpdateManager.appUpdateInfo
         appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
-            Log.v(TAG, "checkAppUpdate onSuccessListener updateAvailability:${appUpdateInfo.updateAvailability()} installStatus:${appUpdateInfo.installStatus()}")
+            Log.v(TAG, "checkAppUpdate onSuccessListener updateAvailability:${updateAvailabilityString(appUpdateInfo.updateAvailability())} installStatus:${appUpdateInfo.installStatus()}")
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
                 && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
                 Log.v(TAG, "checkAppUpdate AppUpdateType.IMMEDIATE")
@@ -236,6 +236,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    private fun updateAvailabilityString( availability: Int) : String {
+        return when( availability) {
+            UpdateAvailability.UPDATE_AVAILABLE -> "available"
+            UpdateAvailability.UPDATE_NOT_AVAILABLE -> "not available"
+            UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> "in progress"
+            UpdateAvailability.UNKNOWN -> "unknown"
+            else -> "undefined"
+        }
+    }
 
     override fun onLowMemory() {
         super.onLowMemory()
