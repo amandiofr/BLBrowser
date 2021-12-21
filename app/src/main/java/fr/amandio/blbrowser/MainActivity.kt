@@ -174,6 +174,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     editor.apply()
                     dialog.dismiss()
                     goFullScreen()
+                    goHome()
                 }.setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                     goFullScreen()
@@ -193,8 +194,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navHeaderMainBinding.btnHome.setOnClickListener {
             activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
             goFullScreen()
-            homeUrl?.let { it1 -> activityMainBinding.webView.loadUrl(it1) }
-            clearHistory = true
+            goHome()
         }
         navHeaderMainBinding.btnExit.setOnClickListener {
             activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -299,6 +299,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun delayedHide() {
         mHideHandler.removeCallbacks(mHideRunnable)
         mHideHandler.postDelayed(mHideRunnable, DELAY_HIDE)
+    }
+
+    private fun goHome() {
+        homeUrl?.let { it1 -> activityMainBinding.webView.loadUrl(it1) }
+        clearHistory = true
     }
 
     private fun goFullScreen() {
