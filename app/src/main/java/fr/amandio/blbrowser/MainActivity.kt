@@ -231,7 +231,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         "wrapper.lemde.fr" in url ||
                         "lemonde.fr/bucket" in url ||
                         "spotify.com" in url ||
+                        "moatpixel.com" in url ||
                         "pubId" in url ||
+                        "moatads.com" in url ||
                         "2mdn.net" in url ||
                         "gdpr" in url ||
                         "storage.googleapis.com" in url ||
