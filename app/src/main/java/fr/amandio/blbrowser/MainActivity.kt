@@ -184,6 +184,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         "keywee" in url ||
                         "adsrvr" in url ||
                         "adnxs" in url ||
+                        "seedtag" in url ||
+                        "ggpht" in url ||
+                        "youtubei" in url ||
+                        "www-embed-player" in url ||
+                        "gumgum" in url ||
+                        "sascdn" in url ||
+                        "youtube.com/embed" in url ||
+                        "quantcast.mgr" in url ||
+                        "quantserve.com" in url ||
+                        "quantcount.com" in url ||
+                        "googletagmanager" in url ||
+                        "justpremium" in url ||
+                        "360yield" in url ||
+                        "elasticad.net/" in url ||
+                        "googleapis.com/" in url ||
+                        "cloudfront.net/" in url ||
+                        "addthis" in url ||
+                        "/instream/" in url ||
+                        "beop.io" in url ||
+                        "r66net.com" in url ||
+                        ".ads." in url ||
+                        ".richaudience." in url ||
                         "google.fr/gen_204" in url ||
                         "static.com/og" in url ||
                         "pc=SEARCH_HOMEPAGE&isMobile=true" in url ||
