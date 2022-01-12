@@ -12,9 +12,7 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
-import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.*
 import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
@@ -141,6 +139,98 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 lastUrl = url
                 navHeaderMainBinding.httpEditText.setText(url)
                 updateDateTime()
+            }
+
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                val response = super.shouldInterceptRequest(view, request)
+                return response
+            }
+
+            override fun onLoadResource(view: WebView?, url: String?) {
+                if( url != null) if (
+                    "pagead" !in url &&
+                    "presage" !in url &&
+                    "outbrain" !in url &&
+                    "ayads" !in url &&
+                    "smartadserver" !in url &&
+                    "facebook.com/tr" !in url &&
+                    "adservice" !in url &&
+                    "adsystem" !in url &&
+                    "sentry.io" !in url &&
+                    "securepubads" !in url &&
+                    "recaptcha" !in url &&
+                    "facebook.net/signals" !in url &&
+                    "doubleclick" !in url &&
+                    "encrypted" !in url &&
+                    "www.gstatic.com" !in url &&
+                    "wlemonde.fr/lmd" !in url &&
+                    "www.google.fr/complete/search" !in url &&
+                    "adsafeprotected" !in url &&
+                    "encrypted-tbn0.gstatic.com" !in url &&
+                    "keywee" !in url &&
+                    "adsrvr" !in url &&
+                    "adnxs" !in url &&
+                    "google.fr/gen_204" !in url &&
+                    "static.com/og" !in url &&
+                    "pc=SEARCH_HOMEPAGE&isMobile=true" !in url &&
+                    "sskzlabs" !in url &&
+                    "site-azp" !in url &&
+                    "abc-static" !in url &&
+                    "cdn.amplitude.com" !in url &&
+                    "twitter.com/" !in url &&
+                    "pbstck.com/" !in url &&
+                    "weborama.fr/" !in url &&
+                    "cookieless-data.com/" !in url &&
+                    "targetemsecure.blob.core.windows.net/" !in url &&
+                    "cdn.jsdelivr.net" !in url &&
+                    "advert" !in url &&
+                    "vidazoo" !in url &&
+                    "spotxchange" !in url &&
+                    "ews.google.com/swg" !in url &&
+                    "polyfill.io" !in url &&
+                    "connect.facebook.net" !in url &&
+                    "secure.lemonde.fr" !in url &&
+                    "scribewithgoogle" !in url &&
+                    "play.google.com/log" !in url &&
+                    "wrapper.lemde.fr" !in url &&
+                    "lemonde.fr/bucket" !in url &&
+                    "spotify.com" !in url &&
+                    "pubId" !in url &&
+                    "gdpr" !in url &&
+                    "storage.googleapis.com" !in url &&
+                    "forecast.lemonde.fr" !in url &&
+                    "via.batch.com" !in url &&
+                    "gscontxt.net" !in url &&
+                    "indexww.com" !in url &&
+                    "omnitagjs.com" !in url &&
+                    "rlcdn.com" !in url &&
+                    "rx.io" !in url &&
+                    "pubmatic" !in url &&
+                    "onaudience" !in url &&
+                    "VideoAdContent" !in url &&
+                    "criteo" !in url &&
+                    "googletagservice" !in url &&
+                    "flashtalking" !in url &&
+                    "ampproject.org" !in url &&
+                    "prebid-server.rubiconproject.com" !in url &&
+                    "ads.stickyadstv.com" !in url &&
+                    "casalemedia.com" !in url &&
+                    "aniview.com" !in url &&
+                    "technoratimedia.com" !in url &&
+                    "lemonde.fr/js/lemonde.min.js" !in url &&
+                    "prebid" !in url &&
+                    "rubiconproject" !in url &&
+                    "amazonaws" !in url &&
+                    "ads.tv" !in url &&
+                    "google-analytics" !in url &&
+                    "google.com/ads" !in url &&
+                    "googlesyndication" !in url
+                ) {
+                    Log.v(TAG, "onLoadResource url:$url")
+                    super.onLoadResource(view, url)
+                } else {
+                    Log.v(TAG, "onLoadResource blocked url:$url")
+                }
             }
         }
         activityMainBinding.webView.webChromeClient = object : WebChromeClient() {
