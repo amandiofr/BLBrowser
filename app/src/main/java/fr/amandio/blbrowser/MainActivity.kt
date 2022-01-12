@@ -232,6 +232,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         "lemonde.fr/bucket" in url ||
                         "spotify.com" in url ||
                         "pubId" in url ||
+                        "2mdn.net" in url ||
                         "gdpr" in url ||
                         "storage.googleapis.com" in url ||
                         "forecast.lemonde.fr" in url ||
