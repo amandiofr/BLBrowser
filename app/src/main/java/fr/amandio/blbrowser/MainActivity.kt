@@ -1,11 +1,14 @@
 package fr.amandio.blbrowser
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ActivityInfo
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.*
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -14,6 +17,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.webkit.*
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.appcompat.app.AppCompatActivity
@@ -40,13 +44,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var mDateTimeHandler = Handler(Looper.getMainLooper())
     private var mDateTimeHandlerTask: Runnable = object : Runnable {
         override fun run() {
-            updateDateTime()
+            updateTopBar()
             mDateTimeHandler.postDelayed(this, INTERVAL)
         }
     }
     private val mHideHandler = Handler(Looper.getMainLooper())
     private val mHideRunnable = Runnable {
         activityMainBinding.webView.settings.javaScriptEnabled = true
+        activityMainBinding.webView.settings.domStorageEnabled = true
         activityMainBinding.webView.settings.builtInZoomControls = true
         activityMainBinding.webView.settings.displayZoomControls = false
         activityMainBinding.webView.settings.loadWithOverviewMode = true
@@ -54,11 +59,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
     }
 
-    fun updateDateTime() {
+    fun updateTopBar() {
+        updateDateTime()
+        updateBatteryState()
+    }
+
+    private fun updateDateTime() {
         navHeaderMainBinding.clockText.text = SimpleDateFormat(DATE_FORMAT, Locale.FRANCE).format(Date())
         if (firstTimeUpdateSucceeded) {
             firstTimeUpdateSucceeded = false
         }
+    }
+
+    private fun updateBatteryState() {
+        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { intentFilter ->
+            applicationContext.registerReceiver(null, intentFilter)
+        }
+        val batteryPct: Float? = batteryStatus?.let { intent ->
+            val level: Int = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale: Int = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            level * 100 / scale.toFloat()
+        }
+        navHeaderMainBinding.batteryText.text = "${batteryPct?.toInt().toString()}%"
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -138,7 +160,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 super.onPageFinished(view, url)
                 lastUrl = url
                 navHeaderMainBinding.httpEditText.setText(url)
-                updateDateTime()
+                updateTopBar()
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
@@ -278,6 +300,39 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     activityMainBinding.progressBar.visibility = View.GONE
                 }
             }
+
+            @SuppressLint("StaticFieldLeak")
+            private var mCustomView: View? = null
+            private var mCustomViewCallback: CustomViewCallback? = null
+            private var mOriginalOrientation = 0
+            private var mOriginalSystemUiVisibility = 0
+
+            override fun getDefaultVideoPoster(): Bitmap? {
+                return BitmapFactory.decodeResource(applicationContext.resources, 2130837573)
+            }
+
+            override fun onHideCustomView() {
+                (window.decorView as FrameLayout).removeView(mCustomView)
+                mCustomView = null
+                window.decorView.systemUiVisibility = mOriginalSystemUiVisibility
+                requestedOrientation = mOriginalOrientation
+                mCustomViewCallback!!.onCustomViewHidden()
+                mCustomViewCallback = null
+            }
+
+            override fun onShowCustomView(paramView: View?, paramCustomViewCallback: CustomViewCallback?) {
+                if (mCustomView != null) {
+                    onHideCustomView()
+                    return
+                }
+                mCustomView = paramView
+                mOriginalSystemUiVisibility = window.decorView.systemUiVisibility
+                mOriginalOrientation = requestedOrientation
+                mCustomViewCallback = paramCustomViewCallback
+                (window.decorView as FrameLayout).addView(mCustomView, FrameLayout.LayoutParams(-1, -1))
+                window.decorView.systemUiVisibility = 3846
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            }
         }
         navHeaderMainBinding.btnBack.setOnClickListener {
             activityMainBinding.webView.goBack()
@@ -378,7 +433,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public override fun onStart() {
         super.onStart()
         startRepeatingTask()
-        updateDateTime()
+        updateTopBar()
     }
 
     public override fun onStop() {
@@ -416,7 +471,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public override fun onResume() {
         super.onResume()
         Log.v(TAG, "onResume")
-        updateDateTime()
+        updateTopBar()
         goFullScreen()
         if (m_savedInstanceState == null) {
             lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
@@ -502,7 +557,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         private const val appUpdateRequestCode = 15
 
         var clearHistory = false
-        var homeUrl: String? = "https://google.fr"
+        var homeUrl: String? = "https://amandio.fr"
         var lastUrl: String? = null
         private var m_savedInstanceState: Bundle? = null
     }

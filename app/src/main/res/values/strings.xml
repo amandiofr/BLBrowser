@@ -22,4 +22,5 @@
     <string name="light">light</string>
     <string name="blbrowser">BLBrowser</string>
     <string name="datetime">DATETIME</string>
+    <string name="battery">bat %</string>
 </resources>
