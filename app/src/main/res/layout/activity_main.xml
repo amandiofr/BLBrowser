@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:background="@android:color/black">
 
-        <fr.amandio.blbrowser.MyWebView
+        <org.adblockplus.libadblockplus.android.webview.AdblockWebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
