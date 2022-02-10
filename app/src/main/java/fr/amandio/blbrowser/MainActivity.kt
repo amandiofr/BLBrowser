@@ -389,7 +389,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         navHeaderMainBinding.titleText.text = "BLBrowser ${BuildConfig.VERSION_NAME}"
         goFullScreen()
-        checkAppUpdate()
     }
 
     @Synchronized
@@ -476,6 +475,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (m_savedInstanceState == null) {
             lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
         }
+        checkAppUpdate()
         activityMainBinding.webView.onResume()
     }
 
