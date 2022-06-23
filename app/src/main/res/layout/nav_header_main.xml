@@ -50,6 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:background="@drawable/mygoogle"
+        android:hint="@string/googletext"
         android:imeOptions="flagNoExtractUi"
         android:inputType="textVisiblePassword"
         android:maxLines="1"

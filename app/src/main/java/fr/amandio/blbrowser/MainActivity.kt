@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 mCustomViewCallback = paramCustomViewCallback
                 (window.decorView as FrameLayout).addView(mCustomView, FrameLayout.LayoutParams(-1, -1))
                 window.decorView.systemUiVisibility = 3846
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             }
         }
         navHeaderMainBinding.btnBack.setOnClickListener {
