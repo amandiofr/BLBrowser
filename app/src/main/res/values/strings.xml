@@ -23,5 +23,5 @@
     <string name="blbrowser">BLBrowser</string>
     <string name="datetime">DATETIME</string>
     <string name="battery">bat %</string>
-    <string name="googletext">googleText</string>
+    <string name="googletext">Enter search text here</string>
 </resources>
