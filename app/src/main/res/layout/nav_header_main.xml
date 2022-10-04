@@ -71,6 +71,7 @@
         android:padding="10dp"
         android:textColor="@android:color/white"
         android:textStyle="normal"
+        android:selectAllOnFocus="true"
         android:autofillHints="" />
 
 

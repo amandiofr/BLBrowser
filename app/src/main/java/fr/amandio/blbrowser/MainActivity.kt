@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             Log.v(TAG, "OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
                 if( navHeaderMainBinding.googleEditText.text.toString() == "crash") {
-                    val x = 1 / 0
+                    @Suppress("DIVISION_BY_ZERO", "UNUSED_VARIABLE") val x = 1 / 0
                 } else {
                     activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
                     goFullScreen()
@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             Log.v(TAG, "OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
                 if( navHeaderMainBinding.httpEditText.text.toString() == "crash") {
-                    val x = 1 / 0
+                    @Suppress("DIVISION_BY_ZERO", "UNUSED_VARIABLE") val x = 1 / 0
                 } else {
                     activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
                     goFullScreen()
