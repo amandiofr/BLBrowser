@@ -41,6 +41,120 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var activityMainBinding: ActivityMainBinding
     private lateinit var navHeaderMainBinding: NavHeaderMainBinding
 
+    private val classesToRemove = arrayOf( "meta-bar clearfix")
+    private val urlsToIgnore = arrayOf(
+        "pagead",
+        "presage",
+        "adscores",
+        "bizdev",
+        "exelator.com/",
+        "beacon.krxd.net/",
+        "lmd?",
+        "outbrain",
+        "ayads",
+        "smartadserver",
+        "facebook.com/tr",
+        "adservice",
+        "adsystem",
+        "sentry.io",
+        "securepubads",
+        "recaptcha",
+        "facebook.net/signals",
+        "doubleclick",
+        "encrypted",
+        "www.gstatic.com",
+        "wlemonde.fr/lmd",
+        "www.google.fr/complete/search",
+        "adsafeprotected",
+        "encrypted-tbn0.gstatic.com",
+        "keywee",
+        "adsrvr",
+        "adnxs",
+        "seedtag",
+        "ggpht",
+        "youtubei",
+        "www-embed-player",
+        "gumgum",
+        "sascdn",
+        "youtube.com/embed",
+        "quantcast.mgr",
+        "quantserve.com",
+        "quantcount.com",
+        "googletagmanager",
+        "justpremium",
+        "360yield",
+        "elasticad.net/",
+        "googleapis.com/",
+        "cloudfront.net/",
+        "addthis",
+        "/instream/",
+        "beop.io",
+        "r66net.com",
+        ".ads.",
+        ".richaudience.",
+        "google.fr/gen_204",
+        "static.com/og",
+        "pc=SEARCH_HOMEPAGE&isMobile=true",
+        "sskzlabs",
+        "site-azp",
+        "abc-static",
+        "cdn.amplitude.com",
+        "twitter.com/",
+        "pbstck.com/",
+        "weborama.fr/",
+        "cookieless-data.com/",
+        "targetemsecure.blob.core.windows.net/",
+        "cdn.jsdelivr.net",
+        "advert",
+        "vidazoo",
+        "spotxchange",
+        "ews.google.com/swg",
+        "polyfill.io",
+        "connect.facebook.net",
+        "secure.lemonde.fr",
+        "scribewithgoogle",
+        "play.google.com/log",
+        "wrapper.lemde.fr",
+        "lemonde.fr/bucket",
+        "spotify.com",
+        "moatpixel.com",
+        "pubId",
+        "moatads.com",
+        "2mdn.net",
+        "gdpr",
+        "storage.googleapis.com",
+        "forecast.lemonde.fr",
+        "via.batch.com",
+        "gscontxt.net",
+        "indexww.com",
+        "omnitagjs.com",
+        "rlcdn.com",
+        "rx.io",
+        "pubmatic",
+        "onaudience",
+        "VideoAdContent",
+        "criteo",
+        "googletagservice",
+        "flashtalking",
+        "ampproject.org",
+        "prebid-server.rubiconproject.com",
+        "ads.stickyadstv.com",
+        "casalemedia.com",
+        "aniview.com",
+        "technoratimedia.com",
+        "lemonde.fr/js/lemonde.min.js",
+        "prebid",
+        "rubiconproject",
+        "amazonaws",
+        "ads.tv",
+        "google-analytics",
+        "google.com/ads",
+        "googlesyndication",
+        "voteplus",
+        "voteminus",
+        "bookmark"
+    )
+
     var mDateTimeHandler = Handler(Looper.getMainLooper())
     private var mDateTimeHandlerTask: Runnable = object : Runnable {
         override fun run() {
@@ -158,6 +272,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
                 Log.v(TAG, "loadUrl $url")
                 super.onPageFinished(view, url)
+                // view.loadUrl("javascript:(function() { document.getElementsByClassName('meta-bar clearfix')[0].style.display='none';}) ()")
+                for( classToRemove in classesToRemove) {
+                    view.loadUrl("javascript:(function() { Array.from(document.getElementsByClassName('$classToRemove')).forEach(function(element) {element.style.display = 'none';});}) ()")
+                }
                 lastUrl = url
                 navHeaderMainBinding.httpEditText.setText(url)
                 updateTopBar()
@@ -178,115 +296,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
             private fun ignoreUrl(url : String?) : Boolean {
-                return ( url == null ||
-                        "pagead" in url ||
-                        "presage" in url ||
-                        "adscores" in url ||
-                        "bizdev" in url ||
-                        "exelator.com/" in url ||
-                        "beacon.krxd.net/" in url ||
-                        "lmd?" in url ||
-                        "outbrain" in url ||
-                        "ayads" in url ||
-                        "smartadserver" in url ||
-                        "facebook.com/tr" in url ||
-                        "adservice" in url ||
-                        "adsystem" in url ||
-                        "sentry.io" in url ||
-                        "securepubads" in url ||
-                        "recaptcha" in url ||
-                        "facebook.net/signals" in url ||
-                        "doubleclick" in url ||
-                        "encrypted" in url ||
-                        "www.gstatic.com" in url ||
-                        "wlemonde.fr/lmd" in url ||
-                        "www.google.fr/complete/search" in url ||
-                        "adsafeprotected" in url ||
-                        "encrypted-tbn0.gstatic.com" in url ||
-                        "keywee" in url ||
-                        "adsrvr" in url ||
-                        "adnxs" in url ||
-                        "seedtag" in url ||
-                        "ggpht" in url ||
-                        "youtubei" in url ||
-                        "www-embed-player" in url ||
-                        "gumgum" in url ||
-                        "sascdn" in url ||
-                        "youtube.com/embed" in url ||
-                        "quantcast.mgr" in url ||
-                        "quantserve.com" in url ||
-                        "quantcount.com" in url ||
-                        "googletagmanager" in url ||
-                        "justpremium" in url ||
-                        "360yield" in url ||
-                        "elasticad.net/" in url ||
-                        "googleapis.com/" in url ||
-                        "cloudfront.net/" in url ||
-                        "addthis" in url ||
-                        "/instream/" in url ||
-                        "beop.io" in url ||
-                        "r66net.com" in url ||
-                        ".ads." in url ||
-                        ".richaudience." in url ||
-                        "google.fr/gen_204" in url ||
-                        "static.com/og" in url ||
-                        "pc=SEARCH_HOMEPAGE&isMobile=true" in url ||
-                        "sskzlabs" in url ||
-                        "site-azp" in url ||
-                        "abc-static" in url ||
-                        "cdn.amplitude.com" in url ||
-                        "twitter.com/" in url ||
-                        "pbstck.com/" in url ||
-                        "weborama.fr/" in url ||
-                        "cookieless-data.com/" in url ||
-                        "targetemsecure.blob.core.windows.net/" in url ||
-                        "cdn.jsdelivr.net" in url ||
-                        "advert" in url ||
-                        "vidazoo" in url ||
-                        "spotxchange" in url ||
-                        "ews.google.com/swg" in url ||
-                        "polyfill.io" in url ||
-                        "connect.facebook.net" in url ||
-                        "secure.lemonde.fr" in url ||
-                        "scribewithgoogle" in url ||
-                        "play.google.com/log" in url ||
-                        "wrapper.lemde.fr" in url ||
-                        "lemonde.fr/bucket" in url ||
-                        "spotify.com" in url ||
-                        "moatpixel.com" in url ||
-                        "pubId" in url ||
-                        "moatads.com" in url ||
-                        "2mdn.net" in url ||
-                        "gdpr" in url ||
-                        "storage.googleapis.com" in url ||
-                        "forecast.lemonde.fr" in url ||
-                        "via.batch.com" in url ||
-                        "gscontxt.net" in url ||
-                        "indexww.com" in url ||
-                        "omnitagjs.com" in url ||
-                        "rlcdn.com" in url ||
-                        "rx.io" in url ||
-                        "pubmatic" in url ||
-                        "onaudience" in url ||
-                        "VideoAdContent" in url ||
-                        "criteo" in url ||
-                        "googletagservice" in url ||
-                        "flashtalking" in url ||
-                        "ampproject.org" in url ||
-                        "prebid-server.rubiconproject.com" in url ||
-                        "ads.stickyadstv.com" in url ||
-                        "casalemedia.com" in url ||
-                        "aniview.com" in url ||
-                        "technoratimedia.com" in url ||
-                        "lemonde.fr/js/lemonde.min.js" in url ||
-                        "prebid" in url ||
-                        "rubiconproject" in url ||
-                        "amazonaws" in url ||
-                        "ads.tv" in url ||
-                        "google-analytics" in url ||
-                        "google.com/ads" in url ||
-                        "googlesyndication" in url
-                        )
+                if( url == null) return true
+                for( urlToIgnore in urlsToIgnore) {
+                    if( urlToIgnore in url) return true
+                }
+                return false
             }
         }
         activityMainBinding.webView.webChromeClient = object : WebChromeClient() {
