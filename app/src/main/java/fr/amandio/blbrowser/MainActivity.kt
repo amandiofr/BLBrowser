@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var activityMainBinding: ActivityMainBinding
     private lateinit var navHeaderMainBinding: NavHeaderMainBinding
 
-    private val classesToRemove = arrayOf( "meta-bar clearfix")
+    private val classesToRemove = arrayOf( "meta-bar clearfix", "meta-infos clearfix")
     private val urlsToIgnore = arrayOf(
         "pagead",
         "presage",
