@@ -8,7 +8,6 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.os.*
 import android.util.Log
 import android.view.MenuItem
@@ -220,7 +219,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(activityMainBinding.root)
 
         activityMainBinding.webView.settings.setSupportZoom(true)
-        activityMainBinding.webView.setBackgroundColor(Color.TRANSPARENT)
         activityMainBinding.navView.setNavigationItemSelectedListener(this)
         val navigationViewHeaderView = activityMainBinding.navView.getHeaderView(0)
         navHeaderMainBinding = NavHeaderMainBinding.bind(navigationViewHeaderView)
