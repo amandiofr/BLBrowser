@@ -20,6 +20,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
@@ -401,6 +402,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 else -> navHeaderMainBinding.seekBarLight.progress = 100
             }
         }
+        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                goBack()
+            }
+        })
         navHeaderMainBinding.titleText.text = "BLBrowser ${BuildConfig.VERSION_NAME}"
         goFullScreen()
     }
@@ -548,7 +554,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         activityMainBinding.webView.loadUrl("https://$url")
     }
 
-    override fun onBackPressed() {
+    private fun goBack() {
         if (activityMainBinding.webView.url != homeUrl) {
             activityMainBinding.webView.goBack()
             activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
