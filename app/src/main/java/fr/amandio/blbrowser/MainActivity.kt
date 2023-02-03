@@ -2,12 +2,14 @@ package fr.amandio.blbrowser
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.MenuItem
@@ -20,6 +22,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
@@ -349,6 +352,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             }
         }
+        activityMainBinding.webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
+            val uri = Uri.parse(url)
+            val request = DownloadManager.Request(uri)
+            val fileName = uri.lastPathSegment
+            request.allowScanningByMediaScanner()
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(applicationContext, "Downloading File $fileName", Toast.LENGTH_LONG).show()
+        })
         navHeaderMainBinding.btnBack.setOnClickListener {
             activityMainBinding.webView.goBack()
             activityMainBinding.drawerLayout.closeDrawer(GravityCompat.START)
