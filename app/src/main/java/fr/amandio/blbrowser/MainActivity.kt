@@ -1,17 +1,20 @@
 package fr.amandio.blbrowser
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DownloadManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.*
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowInsets
@@ -25,6 +28,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -33,6 +37,8 @@ import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import fr.amandio.blbrowser.databinding.ActivityMainBinding
 import fr.amandio.blbrowser.databinding.NavHeaderMainBinding
+import timber.log.Timber
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -44,6 +50,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var activityMainBinding: ActivityMainBinding
     private lateinit var navHeaderMainBinding: NavHeaderMainBinding
+
+    var downloadId: Long = 0
+    var dm: DownloadManager? = null
 
     private val classesToRemove = arrayOf( "meta-bar clearfix", "meta-infos clearfix", "mb-4", "md:flex md:justify-between my-4 w-full flex-wrap", "flex justify-between items-end flex-wrap")
     private val urlsToIgnore = arrayOf(
@@ -204,7 +213,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.v(TAG, "onCreate")
+        Timber.v("onCreate")
 
         val prefs = getSharedPreferences(MY_PREFS_NAME, 0)
         if (prefs.getString(PREFS_HOME, null) != null) {
@@ -241,7 +250,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             })
         }
         navHeaderMainBinding.googleEditText.setOnEditorActionListener { _, actionId, _ ->
-            Log.v(TAG, "OnEditorActionListener $actionId")
+            Timber.v("OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
                 if( navHeaderMainBinding.googleEditText.text.toString() == "crash") {
                     @Suppress("DIVISION_BY_ZERO", "UNUSED_VARIABLE") val x = 1 / 0
@@ -254,7 +263,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             false
         }
         navHeaderMainBinding.httpEditText.setOnEditorActionListener { _, actionId, _ ->
-            Log.v(TAG, "OnEditorActionListener $actionId")
+            Timber.v("OnEditorActionListener $actionId")
             if (actionId == 6 || actionId == 5) {
                 if( navHeaderMainBinding.httpEditText.text.toString() == "crash") {
                     @Suppress("DIVISION_BY_ZERO", "UNUSED_VARIABLE") val x = 1 / 0
@@ -274,7 +283,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     view.clearFormData()
                     clearHistory = false
                 }
-                Log.v(TAG, "loadUrl $url")
+                Timber.v("loadUrl $url")
                 super.onPageFinished(view, url)
                 // view.loadUrl("javascript:(function() { document.getElementsByClassName('meta-bar clearfix')[0].style.display='none';}) ()")
                 for( classToRemove in classesToRemove) {
@@ -287,16 +296,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
                 val response = super.shouldInterceptRequest(view, request)
-                Log.v(TAG, "shouldInterceptRequest response:${request?.url}")
+                Timber.v("shouldInterceptRequest response:${request?.url}")
                 return response
             }
 
             override fun onLoadResource(view: WebView?, url: String?) {
                 if( !ignoreUrl(url)) {
-                    Log.v(TAG, "onLoadResource url:$url")
+                    Timber.v("onLoadResource url:$url")
                     super.onLoadResource(view, url)
                 } else {
-                    Log.v(TAG, "onLoadResource blocked url:$url")
+                    Timber.v("onLoadResource blocked url:$url")
                 }
             }
             private fun ignoreUrl(url : String?) : Boolean {
@@ -309,7 +318,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         activityMainBinding.webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, progress: Int) {
-                Log.v(TAG, "onProgressChanged progress:$progress")
+                Timber.v("onProgressChanged progress:$progress")
                 if (activityMainBinding.progressBar.visibility == View.GONE && lastUrl!!.indexOf("showphoto") < 0) {
                     activityMainBinding.progressBar.visibility = View.VISIBLE
                 }
@@ -353,15 +362,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
         activityMainBinding.webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
-            val uri = Uri.parse(url)
-            val request = DownloadManager.Request(uri)
-            val fileName = uri.lastPathSegment
-            request.allowScanningByMediaScanner()
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            dm.enqueue(request)
-            Toast.makeText(applicationContext, "Downloading File $fileName", Toast.LENGTH_LONG).show()
+            downloadFile( url)
+
         })
         navHeaderMainBinding.btnBack.setOnClickListener {
             activityMainBinding.webView.goBack()
@@ -422,27 +424,60 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         })
         navHeaderMainBinding.titleText.text = "BLBrowser ${BuildConfig.VERSION_NAME}"
+        registerReceiver(downloadCompleteReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
         goFullScreen()
+    }
+
+    private var downloadCompleteReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            Timber.i("downloadCompleteReceiver")
+            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            val cursor: Cursor? = dm.query(DownloadManager.Query().setFilterById(downloadId))
+            if (cursor != null) {
+                cursor.moveToFirst()
+                try {
+                    val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+                    val fileUri: String = cursor.getString(columnIndex)
+                    val file = Uri.parse(fileUri).path?.let { File(it) }
+                    val fileName: String = file?.absolutePath ?: ""
+                    openFile(fileName)
+                } catch (e: Exception) {
+                    Timber.e("$e")
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        unregisterReceiver(downloadCompleteReceiver)
+        super.onDestroy()
+    }
+
+    private fun openFile(file: String) {
+        Timber.i("openFile $file")
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.fromFile(File(file)), "image/jpeg"))
+        } catch (e: Exception) {}
     }
 
     @Synchronized
     private fun checkAppUpdate() {
-        Log.v(TAG, "checkAppUpdate")
+        Timber.v("checkAppUpdate")
         val appUpdateManager = AppUpdateManagerFactory.create(activityMainBinding.webView.context)
         val appUpdateInfoTask = appUpdateManager.appUpdateInfo
         appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
-            Log.v(TAG, "checkAppUpdate onSuccessListener updateAvailability:${updateAvailabilityString(appUpdateInfo.updateAvailability())} installStatus:${appUpdateInfo.installStatus()}")
+            Timber.v("checkAppUpdate onSuccessListener updateAvailability:${updateAvailabilityString(appUpdateInfo.updateAvailability())} installStatus:${appUpdateInfo.installStatus()}")
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
                 && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
-                Log.v(TAG, "checkAppUpdate AppUpdateType.IMMEDIATE")
+                Timber.v("checkAppUpdate AppUpdateType.IMMEDIATE")
                 appUpdateManager.startUpdateFlowForResult(appUpdateInfo, AppUpdateType.IMMEDIATE, this, appUpdateRequestCode)
             }
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
-                Log.v(TAG, "checkAppUpdate UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS")
+                Timber.v("checkAppUpdate UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS")
                 appUpdateManager.startUpdateFlowForResult(appUpdateInfo, AppUpdateType.IMMEDIATE, this, appUpdateRequestCode)
             }
             if (appUpdateInfo.installStatus() == InstallStatus.DOWNLOADED) {
-                Log.v(TAG, "checkAppUpdate InstallStatus.DOWNLOADED")
+                Timber.v("checkAppUpdate InstallStatus.DOWNLOADED")
                 appUpdateManager.completeUpdate()
             }
         }
@@ -458,6 +493,45 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    private fun downloadFile( url : String?) {
+        var missingPermissions = missingExternalStoragePermissions()
+        if(missingPermissions.isNotEmpty()) {
+            requestExternalStoragePermission(missingPermissions)
+            missingPermissions = missingExternalStoragePermissions()
+        }
+        if(missingPermissions.isEmpty()) {
+            val uri = Uri.parse(url)
+            val request = DownloadManager.Request(uri)
+            val fileName = uri.lastPathSegment
+            request.allowScanningByMediaScanner()
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            downloadId = dm.enqueue(request)
+            Toast.makeText(applicationContext, "Downloading File $fileName", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(applicationContext, "Missing permissions ${missingPermissions.contentToString()}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun requestExternalStoragePermission(requestPermissions : Array<String>) {
+        ActivityCompat.requestPermissions(this, requestPermissions,0)
+    }
+
+    private fun missingExternalStoragePermissions() : Array<String> {
+        val requestPermissions: MutableList<String> = ArrayList()
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_DENIED) requestPermissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_DENIED) requestPermissions.add(Manifest.permission.READ_MEDIA_AUDIO)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_DENIED) requestPermissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+        }
+        if (Build.VERSION.SDK_INT < 29) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) requestPermissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) requestPermissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+        return requestPermissions.toTypedArray()
+    }
+
     override fun onLowMemory() {
         super.onLowMemory()
         activityMainBinding.webView.clearCache(true)
@@ -467,6 +541,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onStart()
         startRepeatingTask()
         updateTopBar()
+        goFullScreen()
     }
 
     public override fun onStop() {
@@ -486,7 +561,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     public override fun onPause() {
         super.onPause()
-        Log.v(TAG, "onPause")
+        Timber.v("onPause")
         activityMainBinding.webView.onPause()
     }
 
@@ -503,7 +578,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     public override fun onResume() {
         super.onResume()
-        Log.v(TAG, "onResume")
+        Timber.v("onResume")
         updateTopBar()
         goFullScreen()
         if (m_savedInstanceState == null) {
@@ -529,7 +604,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun goFullScreen() {
-        Log.v(TAG, "goFullScreen")
+        Timber.v("goFullScreen")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.hide(WindowInsets.Type.systemBars())
@@ -548,12 +623,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (currentFocusView != null) {
             currentFocusView.clearFocus()
             currentFocusView.requestFocus()
-            Log.v(TAG, "goFullScreen : focus back to currentFocus")
+            Timber.v("goFullScreen : focus back to currentFocus")
             return
         }
         window.decorView.clearFocus()
         window.decorView.requestFocus()
-        Log.v(TAG, "goFullScreen : no view has focus")
+        Timber.v("goFullScreen : no view has focus")
     }
 
     private fun execGoogleSearch() {

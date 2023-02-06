@@ -15,8 +15,8 @@ android {
         applicationId "fr.amandio.blbrowser"
         minSdkVersion 24
         targetSdkVersion 33
-        versionCode 321
-        versionName "3.2.1"
+        versionCode 325
+        versionName "3.2.5"
         signingConfig signingConfigs.release
     }
     buildTypes {
