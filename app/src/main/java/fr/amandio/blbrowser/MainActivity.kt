@@ -472,8 +472,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val uri = Uri.parse(url)
             val request = DownloadManager.Request(uri)
             val fileName = uri.lastPathSegment
+            Toast.makeText(applicationContext, "Download $fileName", Toast.LENGTH_SHORT).show()
             request.allowScanningByMediaScanner()
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
             downloadId = downloadManager.enqueue(request)?:0
 
@@ -515,6 +516,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                     }
                                     DownloadManager.STATUS_SUCCESSFUL -> {
                                         isDownloadFinished = true
+
+                                        try {
+                                            Thread.sleep(1000)
+                                        } catch (e: InterruptedException) {
+                                            Timber.e("This thread was interrupted")
+                                        }
+
                                         val intent = Intent(Intent.ACTION_VIEW)
                                         intent.setDataAndType(uri, "image/jpeg")
                                         intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
