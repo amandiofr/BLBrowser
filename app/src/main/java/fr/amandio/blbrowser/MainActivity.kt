@@ -4,13 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DownloadManager
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.database.Cursor
+import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -37,7 +36,10 @@ import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import fr.amandio.blbrowser.databinding.ActivityMainBinding
 import fr.amandio.blbrowser.databinding.NavHeaderMainBinding
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import timber.log.Timber.DebugTree
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -52,7 +54,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var navHeaderMainBinding: NavHeaderMainBinding
 
     var downloadId: Long = 0
-    var dm: DownloadManager? = null
+    lateinit var downloadManager: DownloadManager
 
     private val classesToRemove = arrayOf( "meta-bar clearfix", "meta-infos clearfix", "mb-4", "md:flex md:justify-between my-4 w-full flex-wrap", "flex justify-between items-end flex-wrap")
     private val urlsToIgnore = arrayOf(
@@ -213,6 +215,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Timber.plant(DebugTree())
         Timber.v("onCreate")
 
         val prefs = getSharedPreferences(MY_PREFS_NAME, 0)
@@ -294,18 +297,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 updateTopBar()
             }
 
-            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                val response = super.shouldInterceptRequest(view, request)
-                Timber.v("shouldInterceptRequest response:${request?.url}")
-                return response
-            }
-
             override fun onLoadResource(view: WebView?, url: String?) {
                 if( !ignoreUrl(url)) {
-                    Timber.v("onLoadResource url:$url")
                     super.onLoadResource(view, url)
-                } else {
-                    Timber.v("onLoadResource blocked url:$url")
                 }
             }
             private fun ignoreUrl(url : String?) : Boolean {
@@ -318,7 +312,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         activityMainBinding.webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, progress: Int) {
-                Timber.v("onProgressChanged progress:$progress")
                 if (activityMainBinding.progressBar.visibility == View.GONE && lastUrl!!.indexOf("showphoto") < 0) {
                     activityMainBinding.progressBar.visibility = View.VISIBLE
                 }
@@ -361,9 +354,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             }
         }
-        activityMainBinding.webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
-            downloadFile( url)
-
+        activityMainBinding.webView.setDownloadListener(DownloadListener { url, _, _, _, _ ->
+            GlobalScope.launch { downloadFile( url) }
         })
         navHeaderMainBinding.btnBack.setOnClickListener {
             activityMainBinding.webView.goBack()
@@ -424,40 +416,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         })
         navHeaderMainBinding.titleText.text = "BLBrowser ${BuildConfig.VERSION_NAME}"
-        registerReceiver(downloadCompleteReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
         goFullScreen()
-    }
-
-    private var downloadCompleteReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            Timber.i("downloadCompleteReceiver")
-            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            val cursor: Cursor? = dm.query(DownloadManager.Query().setFilterById(downloadId))
-            if (cursor != null) {
-                cursor.moveToFirst()
-                try {
-                    val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                    val fileUri: String = cursor.getString(columnIndex)
-                    val file = Uri.parse(fileUri).path?.let { File(it) }
-                    val fileName: String = file?.absolutePath ?: ""
-                    openFile(fileName)
-                } catch (e: Exception) {
-                    Timber.e("$e")
-                }
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        unregisterReceiver(downloadCompleteReceiver)
-        super.onDestroy()
     }
 
     private fun openFile(file: String) {
         Timber.i("openFile $file")
         try {
             startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.fromFile(File(file)), "image/jpeg"))
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            Timber.e("$e")
+        }
     }
 
     @Synchronized
@@ -506,9 +475,77 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             request.allowScanningByMediaScanner()
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            downloadId = dm.enqueue(request)
-            Toast.makeText(applicationContext, "Downloading File $fileName", Toast.LENGTH_SHORT).show()
+            downloadId = downloadManager.enqueue(request)?:0
+
+            var isDownloadFinished = false
+            var loopCount = 0
+            while (!isDownloadFinished && loopCount <50 ) {
+                loopCount ++
+                Timber.v("checking download $loopCount")
+                try {
+                    downloadManager.query(DownloadManager.Query().setFilterById(downloadId)).use { cursor ->
+                        if (cursor.moveToFirst()) {
+                                val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                                when (cursor.getInt(columnIndex)) {
+                                    DownloadManager.STATUS_FAILED -> {
+                                        val reasonColumn = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
+                                        var reason = " reason : $reasonColumn "
+                                        reason += when (reasonColumn) {
+                                            DownloadManager.ERROR_CANNOT_RESUME -> "ERROR_CANNOT_RESUME"
+                                            DownloadManager.ERROR_DEVICE_NOT_FOUND -> "ERROR_DEVICE_NOT_FOUND"
+                                            DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "ERROR_FILE_ALREADY_EXISTS"
+                                            DownloadManager.ERROR_FILE_ERROR -> "ERROR_FILE_ERROR"
+                                            DownloadManager.ERROR_INSUFFICIENT_SPACE -> "ERROR_INSUFFICIENT_SPACE"
+                                            DownloadManager.ERROR_HTTP_DATA_ERROR -> "ERROR_HTTP_DATA_ERROR"
+                                            DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "ERROR_TOO_MANY_REDIRECTS"
+                                            DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "ERROR_UNHANDLED_HTTP_CODE"
+                                            DownloadManager.ERROR_UNKNOWN -> "ERROR_UNKNOWN"
+                                            else -> "ERROR_UNKNOWN"
+                                        }
+                                        Timber.e("failed to download file ($reason) $fileName")
+                                        isDownloadFinished = true
+                                    }
+                                    DownloadManager.STATUS_RUNNING -> {
+                                        val sizeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                                        val total = cursor.getLong(sizeIndex)
+                                        if (total >= 0) {
+                                            val downloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                                            val downloaded = cursor.getLong(downloadedIndex)
+                                        }
+                                    }
+                                    DownloadManager.STATUS_SUCCESSFUL -> {
+                                        isDownloadFinished = true
+                                        val intent = Intent(Intent.ACTION_VIEW)
+                                        intent.setDataAndType(uri, "image/jpeg")
+                                        intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
+
+                                        val infos: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                                        if (infos.isNotEmpty()) {
+                                            for (info in infos) grantUriPermission(info.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            startActivity(intent)
+                                        } else {
+                                            Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show()
+                                        }
+
+                                    }
+                                }
+                        } else {
+                            isDownloadFinished = true
+                            Timber.e( "failed to download file $fileName")
+                        }
+                        try {
+                            Thread.sleep(200)
+                        } catch (e: InterruptedException) {
+                            Timber.e("This thread was interrupted")
+                        }
+                    }
+                } catch (exception: Exception) {
+                    Timber.e("failed to download file $fileName")
+                }
+            }
+            if( !isDownloadFinished) {
+                Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show()
+            }
         } else {
             Toast.makeText(applicationContext, "Missing permissions ${missingPermissions.contentToString()}", Toast.LENGTH_SHORT).show()
         }
@@ -542,6 +579,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         startRepeatingTask()
         updateTopBar()
         goFullScreen()
+        checkAppUpdate()
     }
 
     public override fun onStop() {
@@ -584,7 +622,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (m_savedInstanceState == null) {
             lastUrl?.let { activityMainBinding.webView.loadUrl(it) }
         }
-        checkAppUpdate()
         activityMainBinding.webView.onResume()
     }
 
@@ -655,8 +692,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     companion object {
-        const val TAG = "MainActivity"
-
         private const val INTERVAL = 60000L
         private const val DELAY_HIDE = 300L
         private const val PREFS_HOME = "HOME"
