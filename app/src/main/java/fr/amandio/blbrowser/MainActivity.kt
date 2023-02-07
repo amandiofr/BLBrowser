@@ -12,6 +12,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaScannerConnection
+import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.*
 import android.view.MenuItem
@@ -28,6 +30,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.net.toFile
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -486,43 +489,40 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 try {
                     downloadManager.query(DownloadManager.Query().setFilterById(downloadId)).use { cursor ->
                         if (cursor.moveToFirst()) {
-                                val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                                when (cursor.getInt(columnIndex)) {
-                                    DownloadManager.STATUS_FAILED -> {
-                                        val reasonColumn = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
-                                        var reason = " reason : $reasonColumn "
-                                        reason += when (reasonColumn) {
-                                            DownloadManager.ERROR_CANNOT_RESUME -> "ERROR_CANNOT_RESUME"
-                                            DownloadManager.ERROR_DEVICE_NOT_FOUND -> "ERROR_DEVICE_NOT_FOUND"
-                                            DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "ERROR_FILE_ALREADY_EXISTS"
-                                            DownloadManager.ERROR_FILE_ERROR -> "ERROR_FILE_ERROR"
-                                            DownloadManager.ERROR_INSUFFICIENT_SPACE -> "ERROR_INSUFFICIENT_SPACE"
-                                            DownloadManager.ERROR_HTTP_DATA_ERROR -> "ERROR_HTTP_DATA_ERROR"
-                                            DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "ERROR_TOO_MANY_REDIRECTS"
-                                            DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "ERROR_UNHANDLED_HTTP_CODE"
-                                            DownloadManager.ERROR_UNKNOWN -> "ERROR_UNKNOWN"
-                                            else -> "ERROR_UNKNOWN"
-                                        }
-                                        Timber.e("failed to download file ($reason) $fileName")
-                                        isDownloadFinished = true
+                            val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                            when (cursor.getInt(columnIndex)) {
+                                DownloadManager.STATUS_FAILED -> {
+                                    val reasonColumn = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
+                                    var reason = " reason : $reasonColumn "
+                                    reason += when (reasonColumn) {
+                                        DownloadManager.ERROR_CANNOT_RESUME -> "ERROR_CANNOT_RESUME"
+                                        DownloadManager.ERROR_DEVICE_NOT_FOUND -> "ERROR_DEVICE_NOT_FOUND"
+                                        DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "ERROR_FILE_ALREADY_EXISTS"
+                                        DownloadManager.ERROR_FILE_ERROR -> "ERROR_FILE_ERROR"
+                                        DownloadManager.ERROR_INSUFFICIENT_SPACE -> "ERROR_INSUFFICIENT_SPACE"
+                                        DownloadManager.ERROR_HTTP_DATA_ERROR -> "ERROR_HTTP_DATA_ERROR"
+                                        DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "ERROR_TOO_MANY_REDIRECTS"
+                                        DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "ERROR_UNHANDLED_HTTP_CODE"
+                                        DownloadManager.ERROR_UNKNOWN -> "ERROR_UNKNOWN"
+                                        else -> "ERROR_UNKNOWN"
                                     }
-                                    DownloadManager.STATUS_RUNNING -> {
-                                        val sizeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-                                        val total = cursor.getLong(sizeIndex)
-                                        if (total >= 0) {
-                                            val downloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-                                            val downloaded = cursor.getLong(downloadedIndex)
-                                        }
+                                    Timber.e("failed to download file ($reason) $fileName")
+                                    runOnUiThread { Toast.makeText(applicationContext, "Failed ($reason) $fileName", Toast.LENGTH_SHORT).show() }
+                                    isDownloadFinished = true
+                                }
+                                DownloadManager.STATUS_RUNNING -> {
+                                    val sizeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                                    val total = cursor.getLong(sizeIndex)
+                                    if (total >= 0) {
+                                        val downloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                                        val downloaded = cursor.getLong(downloadedIndex)
                                     }
-                                    DownloadManager.STATUS_SUCCESSFUL -> {
-                                        isDownloadFinished = true
-
-                                        try {
-                                            Thread.sleep(1000)
-                                        } catch (e: InterruptedException) {
-                                            Timber.e("This thread was interrupted")
-                                        }
-
+                                }
+                                DownloadManager.STATUS_SUCCESSFUL -> {
+                                    isDownloadFinished = true
+                                    val absolutePath = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), uri.lastPathSegment).absolutePath
+                                    Timber.v("scanFile $absolutePath")
+                                    MediaScannerConnection.scanFile(this,arrayOf(absolutePath), arrayOf("image/jpeg")) { _, uri ->
                                         val intent = Intent(Intent.ACTION_VIEW)
                                         intent.setDataAndType(uri, "image/jpeg")
                                         intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -534,9 +534,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                         } else {
                                             runOnUiThread { Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show() }
                                         }
-
                                     }
                                 }
+                            }
                         } else {
                             isDownloadFinished = true
                             Timber.e( "failed to download file $fileName")
