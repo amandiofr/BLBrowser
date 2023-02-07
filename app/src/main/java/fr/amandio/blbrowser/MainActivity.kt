@@ -472,7 +472,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val uri = Uri.parse(url)
             val request = DownloadManager.Request(uri)
             val fileName = uri.lastPathSegment
-            Toast.makeText(applicationContext, "Download $fileName", Toast.LENGTH_SHORT).show()
+            runOnUiThread { Toast.makeText(applicationContext, "Download $fileName", Toast.LENGTH_SHORT).show() }
             request.allowScanningByMediaScanner()
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
@@ -532,7 +532,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                             for (info in infos) grantUriPermission(info.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                             startActivity(intent)
                                         } else {
-                                            Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show()
+                                            runOnUiThread { Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show() }
                                         }
 
                                     }
@@ -552,10 +552,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
             if( !isDownloadFinished) {
-                Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show()
+                runOnUiThread { Toast.makeText(applicationContext, "Can't open file $fileName", Toast.LENGTH_SHORT).show() }
             }
         } else {
-            Toast.makeText(applicationContext, "Missing permissions ${missingPermissions.contentToString()}", Toast.LENGTH_SHORT).show()
+            runOnUiThread { Toast.makeText(applicationContext, "Missing permissions ${missingPermissions.contentToString()}", Toast.LENGTH_SHORT).show() }
         }
     }
 
